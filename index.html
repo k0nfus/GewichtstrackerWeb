@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <h1>Gewichtstracker</h1>
+  {% if user.is_authenticated %}
+    <center><div style="max-width: 400px;">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" style="margin-top: 20px;" class="btn btn-primary">Gewicht tracken</button>
+    </form>
+    </div></center>
+  
+    <div style="width: 100%; overflow-x: auto;">
+      <div :style="{ width: parsed_weights.length * 30 + 'px', height: '300px' }">
+        <canvas id="weightChart" height="300" width="0"></canvas>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var weightData = [
+          {% for weight in str_weights reversed %}
+            {{ weight.weight }},
+          {% endfor %}
+        ];
+          
+        var idData = [
+          {% for weight in str_weights reversed %}
+            "{{ weight.date|date:"d. F Y" }}",
+          {% endfor %}
+        ];
+    
+        // Wenn es mehr als 31 Einträge gibt, begrenze die Daten auf den ersten Eintrag + die letzten 30 Einträge
+        if (weightData.length > 41) {
+          weightData = [weightData[0]].concat(weightData.slice(-40));
+          idData = [idData[0]].concat(idData.slice(-40));
+        }
+    
+        var ctx = document.getElementById('weightChart').getContext('2d');
+        var chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: idData,
+            datasets: [{
+              label: 'Gewicht',
+              data: weightData,
+              borderColor: 'green',
+              backgroundColor: 'transparent',
+              pointBackgroundColor: 'green',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              borderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: true,  // Wichtig für die korrekte Skalierung
+            maintainAspectRatio: false,  // Verhindert, dass das Canvas skaliert wird
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Datum'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Gewicht (kg)'
+                },
+                ticks: {
+                  beginAtZero: false
+                }
+              }
+            }
+          }          
+        });
+      });
+    </script>
+
+  {% if parsed_weights %}
+    <h2 style="margin-top: 25px;">Meine Einträge:</h2>
+    <ul>
+      {% for weight in parsed_weights %}
+      <li>
+        {{ weight.date|date:"d. F Y" }} - {{ weight.weight }} kg
+        <a href="{% url 'tracker:update' weight.id %}" style="color: lightblue;">ÄNDERN</a>
+        <a href="{% url 'tracker:delete' weight.id %}" style="color: red;">LÖSCHEN</a>
+      </li>
+    {% endfor %}
+    </ul>
+    
+  {% else %}
+    <p>Du hast noch keine Einträge.</p>
+  {% endif %}
+
+{% else %}
+  <p>Du musst dich anmelden, um den Gewichtstracker zu nutzen.</p>
+{% endif %}
+
+{% endblock %}

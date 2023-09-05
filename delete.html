@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Gewichtseintrag löschen</h1>
+  <p>Möchtest du den Eintrag für {{ entry.date|date:"d. F Y" }} - {{ entry.weight }} kg wirklich löschen?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Löschen</button>
+    <a href="{% url 'tracker:trackerindex' %}" class="btn btn-secondary">Abbrechen</a>
+  </form>
+{% endblock %}
